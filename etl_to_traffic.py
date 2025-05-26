@@ -41,11 +41,12 @@ class ClickHouseETL:
             self.__transform_to_parquet() # Save to parquet file
 
         except (OperationalError, ProgrammingError, ValueError, Exception) as e:
-            db_error_log_path = "./errors/data_load_failed_log.txt" 
+            db_error_log_path = "./errors/DB_connect_failed_log.txt" 
             with open(db_error_log_path, "a", encoding="utf-8") as f:
-                failed = f"[!] DB 쿼리 실패 또는 데이터 없음: {e}"
+                failed = f"[!] DB 연결 실패 또는 데이터 없음: {e}"
                 print(failed)        # 콘솔 출력
                 f.write(failed + "\n")  # 파일에 한 줄로 저장
+                pass
             try:
                 # 예: 'backup_data.parquet' 파일에서 대체 데이터 로드
                 self.df = pd.read_parquet(f"./data/{self.attack}.parquet")

@@ -94,7 +94,7 @@ def ip_input():
     attack_name.config(text=f"Attack Name: {user_attack_input}")
 
     # 패킷 전송 함수 호출
-    etl = ClickHouseETL(host='211.115.206.18', tg_ip=user_ip_input, attack=user_attack_input, limit=total_packet)
+    etl = ClickHouseETL(host='211.115.206.7', tg_ip=user_ip_input, attack=user_attack_input, limit=total_packet)
     etl.extract()
     
     # 입력창 숨기기
