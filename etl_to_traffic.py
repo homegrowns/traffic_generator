@@ -32,11 +32,11 @@ class ClickHouseETL:
         
         try:
             client = clickhouse_connect.get_client(host=self.host, database="DTIAI")
-            query = f"SELECT * FROM http_packet_temp WHERE label = '{self.attack}' AND dest_port IN (8123, 8181) ORDER BY start_date DESC LIMIT {self.limit}"
+            query = f"SELECT * FROM http_packet_temp WHERE label = '{self.attack}' AND dest_port IN (8181) ORDER BY start_date DESC LIMIT {self.limit}"
             print(f"[i] Query: {query}")
             self.df = client.query_df(query)
 
-            print(f"[i] Loaded {len(self.df)}개 rows from ClickHouse.")
+            print(f"[E] Loaded {len(self.df)}개 rows from ClickHouse.")
             self.total = len(self.df)
             self.__transform_to_parquet() # Save to parquet file
 
@@ -51,11 +51,11 @@ class ClickHouseETL:
                 # 예: 'backup_data.parquet' 파일에서 대체 데이터 로드
                 self.df = pd.read_parquet(f"./data/{self.attack}.parquet")
                 self.total = len(self.df)
-                print(f"[i] Parquet 파일에서 대체 데이터 {self.total}개 로드 완료.")
+                print(f"[E] Parquet 파일에서 대체 데이터 {self.total}개 로드 완료.")
             except Exception as pe:
                 db_error_log_path = "./errors/data_load_failed_log.txt"  # 또는 Path 객체도 가능
                 with open(db_error_log_path, "a", encoding="utf-8") as f:
-                    failed = f"[e] Parquet 로드 실패: {pe}"
+                    failed = f"[!] Parquet 로드 실패: {pe}"
                     print(failed)        # 콘솔 출력
                     f.write(failed + "\n")  # 파일에 한 줄로 저장
                     
@@ -78,29 +78,23 @@ class ClickHouseETL:
             if ": " in line:
                 # 첫 번째 ': ' 기준으로 key와 value 분리 (':'가 value에 포함된 경우도 있으므로 maxsplit=1)
                 key, value = line.split(": ", 1)
+                key = key.strip()
+                value = value.strip()
+                
+                if key.lower() == "referer":
+                    print(f"header referer분석: {value}")
+                    continue  # referer는 저장하지 않고 건너뜀
 
-                # key와 value 양쪽 공백 제거하여 딕셔너리에 저장
-                # 공백을 제거하지 않으면 잘못된 헤더값(예: ' Not(...)')으로 에러 발생 가능
-                headers[key.strip()] = value.strip()
-
+            headers[key] = value
+       
         # 최종적으로 파싱된 헤더 딕셔너리 반환
         return headers
 
-                    
-    def __extract_port_from_raw_header(self, host: str) -> str:
-         # "Host: 211.115.206.18:80" → ["Host", " 211.115.206.18", "80"]
-        parts = host.split(":", 1)  # 최대 1번만 나누어서 세 부분으로 나눔
-        if len(parts) == 2:
-            # 세 번째 부분은 포트 번호이므로 공백 제거 후 반환
-            return parts[1].strip()
-        
-        # "Host:" 줄을 못 찾거나 포트가 없는 경우 None 반환
-        return None
-
+                
 
 
     def send_requests(self, progress_callback=None, stop: bool = False):
-        print("[L] Sending HTTP requests..................")
+        print("[S] Sending HTTP requests..................")
         for idx, row in self.df.iterrows():
             if stop or self.total == self.count:
                 print("Stopping the request sending process.")
@@ -120,8 +114,8 @@ class ClickHouseETL:
                 dest_port = row['dest_port']
                 
                 # 포트 번호가 없을 경우 처리
-                # 포트 번호가 없으면 8181으로 설정
-                port = int(dest_port) if dest_port else 8181
+                # 포트 번호를 8181으로 설정
+                port = "8181" if dest_port is None or dest_port != "8181" else dest_port
 
 
                 # 받는 서버에서 바는 포트 번호가 열려 있지안으면  아래같은 에러 생기므로 8123같은 포트에 해당하는 앱 배포해 놔야한다.
