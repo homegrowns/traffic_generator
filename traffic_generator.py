@@ -94,8 +94,9 @@ def ip_input():
     attack_name.config(text=f"Attack Name: {user_attack_input}")
 
     # 패킷 전송 함수 호출
-    etl = ClickHouseETL(host='10.3.31.44', tg_ip=user_ip_input, attack=user_attack_input, limit=total_packet)
+    etl = ClickHouseETL(host='211.115.221.1', tg_ip=user_ip_input, attack=user_attack_input, limit=total_packet)
     etl.extract()
+    
     
     # 입력창 숨기기
     target_input.pack_forget()
@@ -118,6 +119,7 @@ def ip_input():
 # --- 진행 업데이트 함수 ---
 def update_progress(count: int, result: str, error: int):
     global running, total_packet, complete, user_ip_input
+    total_packet = etl.total
     failed = "" 
     # 실패한 패킷 수를 세는 로직
     if result.startswith("[!]"):
@@ -146,7 +148,7 @@ def update_progress(count: int, result: str, error: int):
         packet_status.config(text=failed)
         packet_status.config(fg="red")
     if not running:
-        raise StopIteration("사용자 중단 요청")
+        raise StopIteration("중지")
     
 # --- 시작 버튼 ---
 def start_progress():

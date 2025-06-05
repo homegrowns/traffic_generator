@@ -115,7 +115,7 @@ class ClickHouseETL:
                 method = row.get('method', 'GET').upper()
                 headers_str = row.get('request_header', '{}')
                 headers = self.__parse_raw_http_header(headers_str)
-                # print(f"[{idx}] Headers: {headers}")
+                print(f"[{idx}] Headers: {headers}")
                 dest_port = row['dest_port']
                 
                 # 포트 번호가 없을 경우 처리
