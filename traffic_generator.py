@@ -94,7 +94,7 @@ def ip_input():
     attack_name.config(text=f"Attack Name: {user_attack_input}")
 
     # 패킷 전송 함수 호출
-    etl = ClickHouseETL(host='211.115.206.7', tg_ip=user_ip_input, attack=user_attack_input, limit=total_packet)
+    etl = ClickHouseETL(host='10.3.31.44', tg_ip=user_ip_input, attack=user_attack_input, limit=total_packet)
     etl.extract()
     
     # 입력창 숨기기
@@ -145,8 +145,9 @@ def update_progress(count: int, result: str, error: int):
         packet_num.config(text=f"[결과] 패킷 {total_packet} 개중 {success} 전송성공 {error}개 전송실패")
         packet_status.config(text=failed)
         packet_status.config(fg="red")
+    if not running:
+        raise StopIteration("사용자 중단 요청")
     
-
 # --- 시작 버튼 ---
 def start_progress():
     global running, complete
@@ -164,8 +165,7 @@ def stop_progress():
         packet_num.config(text=f'⏹️ 중지됨 현재 {total_packet}중 패킷 {count}개 전송')
     else:
         packet_num.config(text=f'⏹️ 중지됨 현재 {total_packet}중 패킷 {count}개 전송')
-        
-    etl.send_requests(progress_callback=update_progress, stop=True)
+
 
 # --- 버튼 과 함수 매칭 ---
 

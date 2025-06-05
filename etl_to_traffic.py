@@ -4,13 +4,11 @@
 
 import pandas as pd
 import requests
-import pickle
-import json
 import clickhouse_connect
-import os
+from agents import AGENT
+import random
 from requests.exceptions import ConnectTimeout
 from clickhouse_connect.driver.exceptions import (
-    ClickHouseError,
     OperationalError,
     ProgrammingError
 )
@@ -82,10 +80,17 @@ class ClickHouseETL:
                 value = value.strip()
                 
                 if key.lower() == "referer":
-                    print(f"header referer분석: {value}")
+                    # print(f"header referer분석: {value}")
                     continue  # referer는 저장하지 않고 건너뜀
+                                
+                if key.lower() == "user-agent":
+                    # User-Agent 헤더는 AGENT 리스트에서 랜덤하게 선택
+                    random_agent = random.choice(AGENT)
+                    # print(f"header user-agent분석: {value} -> {random_agent}")
+                    value = random_agent
 
-            headers[key] = value
+
+                headers[key] = value
        
         # 최종적으로 파싱된 헤더 딕셔너리 반환
         return headers
@@ -110,12 +115,12 @@ class ClickHouseETL:
                 method = row.get('method', 'GET').upper()
                 headers_str = row.get('request_header', '{}')
                 headers = self.__parse_raw_http_header(headers_str)
-                print(f"[{idx}] Headers: {headers}")
+                # print(f"[{idx}] Headers: {headers}")
                 dest_port = row['dest_port']
                 
                 # 포트 번호가 없을 경우 처리
                 # 포트 번호를 8181으로 설정
-                port = "8181" if dest_port is None or dest_port != "8181" else dest_port
+                port = "8888" if dest_port is None or dest_port != "8181" else dest_port
 
 
                 # 받는 서버에서 바는 포트 번호가 열려 있지안으면  아래같은 에러 생기므로 8123같은 포트에 해당하는 앱 배포해 놔야한다.
@@ -177,6 +182,10 @@ class ClickHouseETL:
                     print(failed)        # 콘솔 출력
                     f.write(failed + "\n")  # 파일에 한 줄로 저장
                 break
+            except StopIteration as e:
+                   print(f"중단됨: {e}")
+                   break
+        
                 
                 
 
